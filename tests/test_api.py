@@ -54,6 +54,18 @@ def test_add_channel_and_list(client):
     assert "Sample Channel" in page.text
 
 
+def test_delete_channel(client):
+    client.post("/api/channels", json={"username": "@sample"})
+    # delete existing
+    resp = client.delete("/api/channels/1")
+    assert resp.status_code == 200
+    assert resp.json()["deleted"] == 1
+    # gone from dashboard
+    assert "Sample Channel" not in client.get("/").text
+    # deleting again -> 404
+    assert client.delete("/api/channels/1").status_code == 404
+
+
 def test_invalid_username_rejected(client):
     resp = client.post("/api/channels", json={"username": "!!"})
     assert resp.status_code == 422

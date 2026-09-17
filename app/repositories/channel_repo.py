@@ -43,6 +43,15 @@ def create_pending(session: Session, username: str) -> Channel:
     session.flush()  # assign id without ending the transaction
     return channel
 
+
+def delete(session: Session, channel_id: int) -> bool:
+    """Delete a channel; ORM cascade removes its posts, metrics and digests."""
+    channel = session.get(Channel, channel_id)
+    if channel is None:
+        return False
+    session.delete(channel)
+    return True
+
 def add_metric_snapshot(
     session: Session, channel_id: int, subscribers: int | None, post_count: int
 ) -> None:

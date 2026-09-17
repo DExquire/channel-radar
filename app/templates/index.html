@@ -14,7 +14,7 @@
 <div class="card flush">
 <table>
   <thead><tr>
-    <th>Channel</th><th>Subscribers</th><th>Posts</th><th>Last collected</th><th>Health</th>
+    <th>Channel</th><th>Subscribers</th><th>Posts</th><th>Last collected</th><th>Health</th><th></th>
   </tr></thead>
   <tbody>
   {% for c in channels %}
@@ -32,6 +32,7 @@
         {% elif c.health == "pending" %}<span class="status s-pending"><span class="dot"></span>collecting…</span>
         {% else %}<span class="status s-down"><span class="dot"></span>{{ c.error_message or "down" }}</span>{% endif %}
       </td>
+      <td><button class="del" title="Remove channel" onclick="delChannel({{ c.id }}, '{{ c.username }}')">{{ icon("trash", 15) }}</button></td>
     </tr>
   {% endfor %}
   </tbody>
@@ -72,6 +73,15 @@ async function addChannel(e) {
     btn.disabled = false;
   }
   return false;
+}
+
+async function delChannel(id, username) {
+  if (!confirm('Remove @' + username + ' and all its collected data?')) return;
+  try {
+    const resp = await fetch('/api/channels/' + id, { method: 'DELETE' });
+    if (resp.ok) { location.reload(); }
+    else { const d = await resp.json(); alert('Failed: ' + (d.detail || resp.status)); }
+  } catch (err) { alert('Failed: ' + err); }
 }
 </script>
 {% endblock %}

@@ -55,6 +55,16 @@ def add_channel(payload: AddChannelRequest, db: Session = Depends(get_db)):
     )
 
 
+@router.delete("/channels/{channel_id}", status_code=status.HTTP_200_OK)
+def delete_channel(channel_id: int, db: Session = Depends(get_db)):
+    """Remove a channel and all its data."""
+    from app.repositories import channel_repo
+
+    if not channel_repo.delete(db, channel_id):
+        raise HTTPException(status_code=404, detail="Channel not found")
+    return {"ok": True, "deleted": channel_id}
+
+
 @router.post("/cron/collect")
 def cron_collect(
     db: Session = Depends(get_db),
