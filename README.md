@@ -7,7 +7,7 @@ can open in a browser at any time.
 
 ## 🔗 Live service
 
-**https://REPLACE-ME.onrender.com**  ← _(fill in after deploy — see “Deploy” below)_
+**https://channel-radar-5sjn.onrender.com**
 
 > Render's free tier sleeps when idle; the very first request after a quiet period
 > can take ~30–50 s to wake. Open the link, give it a moment, and it’s responsive.
