@@ -103,9 +103,11 @@ def _parse_datetime(wrap) -> datetime | None:
 
 
 def _parse_reactions(wrap) -> int:
+    """Sum reaction counts. In the t.me/s preview each reaction is a
+    `.tgme_reaction` span holding an emoji element followed by its count text
+    (e.g. "<tg-emoji/>42"); paid star reactions use an <i> icon + count."""
     total = 0
-    for reaction in wrap.select(".tgme_widget_message_reaction"):
-        # reaction node text is like "👍 42"
+    for reaction in wrap.select(".tgme_reaction"):
         total += parse_count(reaction.get_text(" ", strip=True))
     return total
 

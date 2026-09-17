@@ -104,8 +104,9 @@ heuristic — collection and the rest of the dashboard are unaffected.
 
 ## Not done / scope notes
 - **No auth** (public link, per task).
-- **Reactions/forwards** aren't always exposed in the anonymous web preview; when
-  absent they're stored as 0. **Views** and text/date/id are the reliable core.
+- **Reactions** are parsed from the preview (`.tgme_reaction`), summed per post.
+  **Forwards** aren't exposed in the anonymous web preview, so they're stored as 0.
+  Views/reactions/text/date/id are collected reliably.
 - No comparison-of-multiple-channels chart or "not posted in 3 days" alert yet
   (source health already flags stale/down); both are small additions on this model.
 - Test coverage targets risk, not 100%.
