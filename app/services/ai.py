@@ -66,7 +66,13 @@ class AIService:
         )
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.3, "maxOutputTokens": max_output_tokens},
+            "generationConfig": {
+                "temperature": 0.3,
+                "maxOutputTokens": max_output_tokens,
+                # gemini-3.x flash is a "thinking" model; without this the token
+                # budget is spent on reasoning and the visible answer is cut off.
+                "thinkingConfig": {"thinkingBudget": 0},
+            },
         }
         try:
             with httpx.Client(timeout=settings.ai_timeout_seconds) as client:
@@ -76,10 +82,25 @@ class AIService:
                 return None
             resp.raise_for_status()
             data = resp.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            # Join every text part of the first candidate (output can be split).
+            parts = data["candidates"][0]["content"]["parts"]
+            text = "".join(p.get("text", "") for p in parts).strip()
+            return text or None
         except (httpx.HTTPError, KeyError, IndexError, ValueError) as exc:
             logger.warning("Gemini call failed, degrading gracefully: {}", exc)
             return None
+
+    def probe(self) -> dict:
+        """TEMPORARY diagnostic: run a real summary-style call and report the
+        full output + token usage, so we can confirm thinking is disabled."""
+        if not self._enabled:
+            return {"enabled": False}
+        prompt = (
+            "Summarize in 3 full sentences what a Telegram channel about product "
+            "updates might have covered this week. Be specific."
+        )
+        out = self._generate(prompt, max_output_tokens=1024)
+        return {"enabled": True, "model": self._model, "output_len": len(out or ""), "output": out}
 
     def categorize(self, text: str) -> str:
         """Return a short category label. Always returns something usable."""
@@ -94,7 +115,7 @@ class AIService:
             "Sports, Entertainment, Other). Reply with the label only.\n\n"
             f"Post:\n{text[:1500]}"
         )
-        label = self._generate(prompt, max_output_tokens=16)
+        label = self._generate(prompt, max_output_tokens=64)
         if not label:
             return _keyword_category(text)
         # Keep it clean: first line, strip punctuation.
@@ -113,7 +134,7 @@ class AIService:
             f"(3-5 sentences) in English covering the main themes and notable points. "
             f"Be specific and useful for a reader who missed them.\n\nPosts:\n{joined}"
         )
-        return self._generate(prompt, max_output_tokens=400)
+        return self._generate(prompt, max_output_tokens=1024)
 
 
 def get_ai_service() -> AIService:
