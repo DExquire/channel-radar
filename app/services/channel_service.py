@@ -92,7 +92,12 @@ def get_or_build_digest(session: Session, channel: Channel, period_days: int = 7
         _digest_stmt(channel.id, period)
     )
     now = datetime.now(timezone.utc)
-    if cached and cached.created_at and _aware(cached.created_at) > now - _DIGEST_TTL:
+    if (
+        cached
+        and cached.created_at
+        and _aware(cached.created_at) > now - _DIGEST_TTL
+        and _looks_complete(cached.summary)
+    ):
         return cached.summary
 
     ai = get_ai_service()
@@ -129,6 +134,14 @@ def _digest_stmt(channel_id: int, period: str):
 
 def _aware(dt: datetime) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def _looks_complete(text: str | None) -> bool:
+    """A cached digest is treated as usable only if it ends like a finished
+    sentence — self-heals digests truncated by an earlier bug/model."""
+    if not text:
+        return False
+    return text.rstrip()[-1:] in '.!?)»"’”'
 
 
 def _is_valid_username(username: str) -> bool:
