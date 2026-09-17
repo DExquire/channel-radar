@@ -24,6 +24,8 @@ from app.services.ai import get_ai_service
 _MAX_CATEGORIZE_PER_RUN = 20
 # Rebuild a cached digest at most this often.
 _DIGEST_TTL = timedelta(hours=6)
+# Period whose digest is precomputed in the background (matches the page default).
+DEFAULT_DIGEST_PERIOD_DAYS = 7
 
 
 class ChannelExists(Exception):
@@ -49,13 +51,20 @@ def add_channel(session: Session, raw_username: str) -> Channel:
     # left with status=error, which the UI surfaces. We flush so the row exists.
     try:
         collector.collect_channel(session, channel)
+        # Precompute the default-period digest so the channel page shows it
+        # immediately, without a live LLM call on the first view.
+        _safe_build_digest(session, channel)
     except collector.ChannelNotAvailable:
         logger.info("first collection failed for @{} (kept as error row)", username)
     return channel
 
 
 def collect_all_due(session: Session, min_recollect_minutes: int) -> dict:
-    """Refresh every channel due for collection, then categorize new posts."""
+    """Refresh every due channel, categorize new posts, refresh digests.
+
+    All AI work (categories + digests) happens here in the background, so page
+    views only read cached results and never trigger a live LLM call.
+    """
     due = channel_repo.due_for_collection(session, min_recollect_minutes)
     collected, failed = 0, 0
     for channel in due:
@@ -65,7 +74,26 @@ def collect_all_due(session: Session, min_recollect_minutes: int) -> dict:
         except collector.ChannelNotAvailable:
             failed += 1
     categorized = _categorize_missing(session)
-    return {"due": len(due), "collected": collected, "failed": failed, "categorized": categorized}
+    digested = 0
+    for channel in due:
+        if _safe_build_digest(session, channel):
+            digested += 1
+    return {
+        "due": len(due),
+        "collected": collected,
+        "failed": failed,
+        "categorized": categorized,
+        "digested": digested,
+    }
+
+
+def _safe_build_digest(session: Session, channel: Channel) -> bool:
+    """Best-effort digest build for the default period; never raises."""
+    try:
+        return bool(get_or_build_digest(session, channel, DEFAULT_DIGEST_PERIOD_DAYS))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("digest build failed for @{}: {}", channel.username, exc)
+        return False
 
 
 def _categorize_missing(session: Session) -> int:
