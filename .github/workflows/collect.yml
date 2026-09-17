@@ -1,0 +1,15 @@
+name: collect
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger collection
+        run: |
+          curl -sS -X POST "${{ secrets.SERVICE_URL }}/api/cron/collect" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            --max-time 120 --retry 3 --retry-delay 20 --fail-with-body
