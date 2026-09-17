@@ -90,18 +90,6 @@ class AIService:
             logger.warning("Gemini call failed, degrading gracefully: {}", exc)
             return None
 
-    def probe(self) -> dict:
-        """TEMPORARY diagnostic: run a real summary-style call and report the
-        full output + token usage, so we can confirm thinking is disabled."""
-        if not self._enabled:
-            return {"enabled": False}
-        prompt = (
-            "Summarize in 3 full sentences what a Telegram channel about product "
-            "updates might have covered this week. Be specific."
-        )
-        out = self._generate(prompt, max_output_tokens=1024)
-        return {"enabled": True, "model": self._model, "output_len": len(out or ""), "output": out}
-
     def categorize(self, text: str) -> str:
         """Return a short category label. Always returns something usable."""
         text = (text or "").strip()
