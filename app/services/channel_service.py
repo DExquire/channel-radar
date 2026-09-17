@@ -21,7 +21,8 @@ from app.services import collector
 from app.services.ai import get_ai_service
 
 # Cap AI categorizations per collection run to protect the free quota.
-_MAX_CATEGORIZE_PER_RUN = 20
+# On a 429 categorize() falls back to a keyword label, so a large cap is safe.
+_MAX_CATEGORIZE_PER_RUN = 100
 # Rebuild a cached digest at most this often.
 _DIGEST_TTL = timedelta(hours=6)
 # Period whose digest is precomputed in the background (matches the page default).
