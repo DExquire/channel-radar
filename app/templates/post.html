@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% set p = d.post %}
+{% block title %}Post {{ p.tg_msg_id }} · channel-radar{% endblock %}
+{% block body %}
+<a class="crumb" href="/channels/{{ d.channel.id }}">{{ icon("back", 15) }} {{ d.channel.title }}</a>
+
+<div class="row" style="margin:12px 0; align-items:center">
+  {% if p.category %}<span class="badge cat">{{ p.category }}</span>{% endif %}
+  {% if p.has_media %}<span class="inline faint small">{{ icon("media", 14) }} media</span>{% endif %}
+  <span class="muted small">{{ p.posted_at.strftime("%Y-%m-%d %H:%M UTC") if p.posted_at else "no date" }}</span>
+  <a class="inline small" href="{{ p.link }}" target="_blank" rel="noopener">{{ icon("link", 14) }} Open original</a>
+</div>
+
+<div class="card post-text">{{ p.text or "(media post / no text)" }}</div>
+
+<h2>Metrics over time</h2>
+<div class="card">
+  {% if d.metric_history|length > 1 %}
+    <canvas id="hist" height="88"></canvas>
+  {% else %}
+    <table>
+      <thead><tr><th>Collected</th><th>Views</th><th>Reactions</th><th>Forwards</th></tr></thead>
+      <tbody>
+      {% for m in d.metric_history %}
+        <tr><td class="small muted">{{ m.t[:16].replace('T',' ') }}</td>
+        <td class="num">{{ "{:,}".format(m.views) }}</td><td class="num">{{ m.reactions }}</td><td class="num">{{ m.forwards }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if d.metric_history|length > 1 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const h = {{ d.metric_history|tojson }};
+new Chart(document.getElementById('hist'), {
+  type: 'line',
+  data: {
+    labels: h.map(x => x.t.slice(0,16).replace('T',' ')),
+    datasets: [
+      { label: 'Views', data: h.map(x => x.views), borderColor: '#4f8cff', tension: .25, pointRadius: 2 },
+      { label: 'Reactions', data: h.map(x => x.reactions), borderColor: '#3fb950', tension: .25, pointRadius: 2 }
+    ]
+  },
+  options: {
+    plugins: { legend: { labels: { color: '#e7eaf0' } } },
+    scales: {
+      x: { ticks: { color: '#9aa4b2', maxTicksLimit: 6 }, grid: { color: '#262b36' } },
+      y: { ticks: { color: '#9aa4b2' }, grid: { color: '#262b36' } }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

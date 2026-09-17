@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}channel-radar{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+{% from "icons.html" import icon %}
+  <div class="container">
+    <header class="top">
+      <a class="brand" href="/">{{ icon("logo", 22) }} channel-radar</a>
+      <span class="muted small">Telegram channel analytics</span>
+    </header>
+    {% block body %}{% endblock %}
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

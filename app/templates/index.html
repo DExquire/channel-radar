@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon %}
+{% block body %}
+<form class="add" onsubmit="return addChannel(event)">
+  <input type="text" id="username" placeholder="Add a public channel, e.g. @durov" autocomplete="off">
+  <button type="submit" id="addBtn">{{ icon("plus", 16) }} Add channel</button>
+</form>
+<div id="status" class="small muted"></div>
+
+<h2>Channels</h2>
+{% if not channels %}
+  <div class="card muted">No channels yet. Add one above — you'll see data within seconds.</div>
+{% else %}
+<div class="card flush">
+<table>
+  <thead><tr>
+    <th>Channel</th><th>Subscribers</th><th>Posts</th><th>Last collected</th><th>Health</th>
+  </tr></thead>
+  <tbody>
+  {% for c in channels %}
+    <tr>
+      <td>
+        <a href="/channels/{{ c.id }}">{{ c.title }}</a>
+        <div class="muted small">@{{ c.username }}</div>
+      </td>
+      <td class="num">{{ "{:,}".format(c.subscribers) if c.subscribers else "—" }}</td>
+      <td class="num">{{ c.post_count }}</td>
+      <td class="small muted">{{ c.last_collected_at.strftime("%Y-%m-%d %H:%M") if c.last_collected_at else "—" }}</td>
+      <td>
+        {% if c.health == "ok" %}<span class="status s-ok"><span class="dot"></span>healthy</span>
+        {% elif c.health == "stale" %}<span class="status s-stale"><span class="dot"></span>stale</span>
+        {% elif c.health == "pending" %}<span class="status s-pending"><span class="dot"></span>collecting…</span>
+        {% else %}<span class="status s-down"><span class="dot"></span>{{ c.error_message or "down" }}</span>{% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function addChannel(e) {
+  e.preventDefault();
+  const input = document.getElementById('username');
+  const btn = document.getElementById('addBtn');
+  const status = document.getElementById('status');
+  const username = input.value.trim();
+  if (!username) return false;
+  btn.disabled = true;
+  status.textContent = 'Collecting first data for ' + username + '… (a few seconds)';
+  try {
+    const resp = await fetch('/api/channels', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username})
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      status.textContent = '✕ ' + (data.detail || 'Failed to add channel');
+    } else if (data.status === 'error') {
+      status.textContent = 'Added, but source is unavailable: ' + (data.error_message || 'unknown');
+      setTimeout(() => location.reload(), 900);
+    } else {
+      status.textContent = 'Added @' + data.username + ' — ' + data.post_count + ' posts collected.';
+      setTimeout(() => location.reload(), 700);
+    }
+  } catch (err) {
+    status.textContent = '✕ ' + err;
+  } finally {
+    btn.disabled = false;
+  }
+  return false;
+}
+</script>
+{% endblock %}

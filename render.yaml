@@ -1,0 +1,20 @@
+# Render blueprint. Deploy: push to GitHub, then "New +" -> "Blueprint" on Render
+# and point it at this repo. Set the secret env vars (marked sync:false) in the
+# Render dashboard after the first deploy.
+services:
+  - type: web
+    name: channel-radar
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: DATABASE_URL          # Neon Postgres connection string (external DB)
+        sync: false
+      - key: GEMINI_API_KEY        # Google AI Studio key
+        sync: false
+      - key: CRON_SECRET           # shared secret for the cron endpoint
+        sync: false
+      # RUN_SCHEDULER stays off on Render free (service sleeps); the GitHub
+      # Action drives collection via /api/cron/collect instead.
+      - key: RUN_SCHEDULER
+        value: "0"
