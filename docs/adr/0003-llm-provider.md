@@ -8,7 +8,7 @@ The AI layer is mandatory and must be *useful*, on a free tier, with the key kep
 out of git, and the dashboard must not fall over if the LLM is down or rate-limited.
 
 ## Decision
-Use **Google Gemini** (`gemini-2.0-flash`) via the AI Studio free tier, called over
+Use **Google Gemini** (`gemini-3.6-flash`) via the AI Studio free tier, called over
 plain **httpx REST** (no heavy SDK). Two features:
 - **Channel digest** — "what did this channel write about in the last N days",
   cached per `(channel, period)` in `channel_digests` so we don't re-call per view.

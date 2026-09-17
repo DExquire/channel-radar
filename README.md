@@ -96,7 +96,7 @@ Switching to Fly.io (no cold start) is config-only (`RUN_SCHEDULER=1`), no code
 change.
 
 ## AI: what and why (see `docs/adr/0003`)
-Gemini `gemini-2.0-flash` (free, no card). Digest = "what the channel wrote about
+Gemini `gemini-3.6-flash` (free, no card). Digest = "what the channel wrote about
 this period" (cached per channel/period); category = short topic label per post
 (background, quota-capped). **If the LLM is unavailable or rate-limited**, digests
 return `None` ("unavailable" in the UI) and categories fall back to a keyword

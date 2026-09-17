@@ -81,30 +81,6 @@ class AIService:
             logger.warning("Gemini call failed, degrading gracefully: {}", exc)
             return None
 
-    def probe(self) -> dict:
-        """Temporary diagnostic: make one tiny Gemini call and report the raw
-        outcome (HTTP status / exception) WITHOUT leaking the API key. Used to
-        debug why digests degrade in production."""
-        if not self._enabled:
-            return {"enabled": False, "model": self._model, "detail": "no key configured"}
-        url = (
-            f"{settings.gemini_base_url}/models/{self._model}:generateContent"
-            f"?key={settings.gemini_api_key}"
-        )
-        payload = {"contents": [{"parts": [{"text": "Say OK"}]}]}
-        try:
-            with httpx.Client(timeout=settings.ai_timeout_seconds) as client:
-                resp = client.post(url, json=payload)
-            body = resp.text[:300]
-            ok = False
-            try:
-                ok = bool(resp.json()["candidates"][0]["content"]["parts"][0]["text"])
-            except Exception:
-                ok = False
-            return {"enabled": True, "model": self._model, "status": resp.status_code, "parsed_ok": ok, "body": body}
-        except Exception as exc:  # noqa: BLE001
-            return {"enabled": True, "model": self._model, "status": "exception", "detail": str(exc)[:300]}
-
     def categorize(self, text: str) -> str:
         """Return a short category label. Always returns something usable."""
         text = (text or "").strip()

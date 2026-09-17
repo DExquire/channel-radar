@@ -75,11 +75,3 @@ def cron_collect(
 @router.get("/healthz")
 def healthz():
     return {"ok": True, "ai_enabled": settings.ai_enabled}
-
-
-@router.get("/ai-debug")
-def ai_debug():
-    """TEMPORARY diagnostic endpoint — remove after debugging the AI layer."""
-    from app.services.ai import get_ai_service
-
-    return get_ai_service().probe()
